@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<section class="login-layout">
+  <div class="login-intro">
+    <p class="eyebrow">TRANSPORT OPERATIONS</p>
+    <h1>Every trip,<br>in view.</h1>
+    <p class="lede">Sign in to follow your scheduled journeys and live vehicle locations.</p>
+  </div>
+  <form class="login-form" method="post">
+    {% csrf_token %}
+    <h2>Welcome back</h2>
+    {% if form.errors %}<p class="form-error" role="alert">Username or password was not recognized.</p>{% endif %}
+    <label for="id_username">Username</label>
+    <input id="id_username" name="username" type="text" autocomplete="username" required autofocus>
+    <label for="id_password">Password</label>
+    <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+    <button class="button button-primary" type="submit">Sign in <span aria-hidden="true">→</span></button>
+    <input type="hidden" name="next" value="{{ next }}">
+  </form>
+</section>
+{% endblock %}

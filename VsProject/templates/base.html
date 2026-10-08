@@ -1,0 +1,25 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Transit Desk{% endblock %} | Transit Desk</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{% url 'accounts:dashboard' %}"><span class="brand-mark">T</span>Transit Desk</a>
+    {% if user.is_authenticated %}
+    <nav class="topnav" aria-label="Main navigation">
+      {% if user.is_staff %}<a href="{% url 'accounts:reports' %}">Reports</a><a href="{% url 'admin:index' %}">Administration</a>{% endif %}
+      <span class="user-label">{{ user.get_full_name|default:user.username }}</span>
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="page-shell">{% block content %}{% endblock %}</main>
+  <footer class="site-footer">Transit operations</footer>
+</body>
+</html>

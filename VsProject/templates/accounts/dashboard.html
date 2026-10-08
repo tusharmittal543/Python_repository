@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><p class="eyebrow">PASSENGER PORTAL</p><h1>{% if user.is_staff %}Operations overview{% else %}Your journeys{% endif %}</h1></div>
+  {% if user.is_staff %}<a class="button button-primary" href="{% url 'accounts:reports' %}">View reports <span aria-hidden="true">→</span></a>{% endif %}
+</section>
+<section class="section-heading"><div><h2>{% if user.is_staff %}Recent trips{% else %}Upcoming and recent trips{% endif %}</h2><p>Trip status and vehicle assignment</p></div><span class="count-chip">{{ trips|length }} shown</span></section>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Route</th><th>Departure</th><th>Vehicle</th><th>Driver</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for trip in trips %}
+      <tr>
+        <td><strong>{{ trip.route.name }}</strong><small>{{ trip.route.origin }} → {{ trip.route.destination }}</small></td>
+        <td>{{ trip.scheduled_departure|date:"M j, Y · H:i" }}</td>
+        <td>{{ trip.vehicle.registration_number }}</td>
+        <td>{{ trip.driver.full_name }}</td>
+        <td><span class="status status-{{ trip.status }}">{{ trip.get_status_display }}</span></td>
+        <td><a class="row-link" href="{% url 'trips:detail' trip.pk %}" aria-label="View {{ trip.route.name }} trip">Track <span aria-hidden="true">↗</span></a></td>
+      </tr>
+    {% empty %}
+      <tr><td class="empty-state" colspan="6">No trips are assigned to your account yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

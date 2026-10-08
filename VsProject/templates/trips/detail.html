@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ trip.route.name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'accounts:dashboard' %}">← Dashboard</a>
+<section class="page-heading trip-heading"><div><p class="eyebrow">TRIP {{ trip.pk }} · {{ trip.get_status_display|upper }}</p><h1>{{ trip.route.name }}</h1><p class="lede">{{ trip.route.origin }} <span aria-hidden="true">→</span> {{ trip.route.destination }}</p></div><span class="status status-{{ trip.status }}">{{ trip.get_status_display }}</span></section>
+<section class="trip-layout">
+  <div class="trip-facts">
+    <div><span>Departure</span><strong>{{ trip.scheduled_departure|date:"M j, Y · H:i" }}</strong></div>
+    <div><span>Vehicle</span><strong>{{ trip.vehicle.registration_number }} · {{ trip.vehicle.make }} {{ trip.vehicle.model }}</strong></div>
+    <div><span>Driver</span><strong>{{ trip.driver.full_name }}</strong></div>
+    <div><span>Route stops</span><strong>{% for stop in trip.route.stops.all %}{{ stop.name }}{% if not forloop.last %}, {% endif %}{% empty %}No intermediate stops{% endfor %}</strong></div>
+  </div>
+  <div class="map-panel"><div class="map-heading"><div><h2>Live location</h2><p id="location-updated">Waiting for location data</p></div><span class="live-indicator">LIVE</span></div><div id="trip-map" role="application" aria-label="Live trip location map"></div></div>
+</section>
+{{ trip.pk|json_script:"trip-id" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  const tripId = JSON.parse(document.getElementById("trip-id").textContent);
+  const map = L.map("trip-map").setView([20, 0], 2);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+  const markerLayer = L.layerGroup().addTo(map);
+  const routeLine = L.polyline([], { color: "#147d68", weight: 4, opacity: 0.8 }).addTo(map);
+  async function refreshLocations() {
+    try {
+      const response = await fetch(`/api/trips/${tripId}/locations/`, { headers: { "Accept": "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const points = data.locations.map(point => [Number(point.latitude), Number(point.longitude)]);
+      markerLayer.clearLayers();
+      if (!points.length) return;
+      const latest = points[points.length - 1];
+      L.marker(latest).addTo(markerLayer).bindPopup("Latest vehicle location");
+      routeLine.setLatLngs(points);
+      if (!map._hasCentered) { map.fitBounds(routeLine.getBounds(), { padding: [24, 24], maxZoom: 14 }); map._hasCentered = true; }
+      document.getElementById("location-updated").textContent = `Updated ${new Date(data.locations[data.locations.length - 1].recorded_at).toLocaleTimeString()}`;
+    } catch (error) {
+      document.getElementById("location-updated").textContent = "Location service temporarily unavailable";
+    }
+  }
+  refreshLocations();
+  window.setInterval(refreshLocations, 5000);
+</script>
+{% endblock %}
